@@ -13,6 +13,7 @@
   :depends-on (#:alexandria
                #:babel
                #:com.inuoe.jzon
-               #:sb-bsd-sockets
+               (:feature :sbcl-only #:sb-bsd-sockets)
+               (:feature (not :sbcl-only) #:usocket)
                #:split-sequence
                #:uiop))

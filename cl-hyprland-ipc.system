@@ -20,10 +20,8 @@
   :depends-on (:alexandria
 	       :babel
 	       "jzon" ;; :com.inuoe.jzon
-	       #+sbcl
-	       :sb-bsd-sockets
-	       #-sbcl
-	       "usocket"
+	       (:feature :sbcl-only :sb-bsd-sockets)
+	       (:feature (:not :sbcl-only) :usocket)
 	       :split-sequence
 	       :uiop)
   :components ((:module "src"

@@ -2,15 +2,28 @@
 
 (defun %hyprctl (request)
   (with-local-stream-socket (hyprctl-socket *hyprctl-socket*)
+    #+sbcl-only
     (sb-bsd-sockets:socket-send hyprctl-socket request nil)
-    (loop :with full-buffer := (make-array 0
+    #-sbcl-only
+    (usocket:socket-send hyprctl-socket request nil)
+    #-sbcl-only
+    (finish-output (usocket:socket-stream hyprctl-socket))
+    #+sbcl-only
+    (loop for loop-count from 0
+	  :with full-buffer := (make-array 0
                                            :element-type '(unsigned-byte 8)
                                            :fill-pointer 0
                                            :adjustable t)
           :with response-buffer := (make-array 8192
                                                :element-type '(unsigned-byte 8))
           :for response-length := (nth-value 1
+					     #+sbcl-only
                                              (sb-bsd-sockets:socket-receive
+                                              hyprctl-socket
+                                              response-buffer
+                                              nil)
+                                             #-sbcl-only
+					     (usocket:socket-receive
                                               hyprctl-socket
                                               response-buffer
                                               nil))
@@ -19,7 +32,19 @@
                                     full-buffer
                                     response-length))
           :when (< response-length (length response-buffer))
-            :return (babel:octets-to-string full-buffer))))
+            :return (babel:octets-to-string full-buffer))
+    #-sbcl-only
+    (let ((response-buffer (make-array 8192 :element-type '(unsigned-byte 8)
+				       :fill-pointer t)))
+      (multiple-value-bind (return-buffer length remote-host remote-port)
+	  (usocket:socket-receive hyprctl-socket response-buffer nil)
+	(format t "hyperctl: socket-recv: same-buffer-p=~A, length=~A remote=~S~%"
+		(eql response-buffer return-buffer) length
+		(list remote-host remote-port))
+	(assert (< length 8192) nil "response too long")
+	(setf (fill-pointer response-buffer) length)
+	(babel:octets-to-string response-buffer)))))
+
 
 (defun hyprctl (request &optional jsonp)
   "Send REQUEST to hyprctl and return the response, or the parsed object if JSONP is non-NIL."

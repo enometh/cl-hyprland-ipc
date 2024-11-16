@@ -34,8 +34,10 @@ In order: identifier for use in HANDLE-EVENTS, string prefix received from the s
 
 HANDLER should have a single argument, which is the line that was received from the socket. If RETURN-ON-NON-NIL-P is non-NIL, stop at and return the first non-NIL result."
   (with-local-stream-socket (events-socket *events-socket*)
-    (loop :with events-stream := (sb-bsd-sockets:socket-make-stream events-socket
+    (loop :with events-stream := #+sbcl-only (sb-bsd-sockets:socket-make-stream events-socket
                                                                     :input t)
+	  #-sbcl-only
+	  (usocket:socket-stream events-socket)
           :for line := (read-line events-stream)
           :while line
           :for value := (funcall handler line)
