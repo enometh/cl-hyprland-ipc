@@ -1,0 +1,22 @@
+-*- Org -*-
+
+* 1a7abf2355b
+#+begin_src lisp :eval no
+(defvar *cl-hyprland-ipc-source-dir* "/dev/shm/cl-hyprland-ipc/")
+(load "/home/madhu/cl/extern/Github/jzon/jzon.system")
+(load "/dev/shm/cl-hyprland-ipc/cl-hyprland-ipc.system")
+(mk:oos :cl-hyprland-ipc :load :compile-during-load t)
+#+end_src
+
+#+begin_src lisp :eval no
+(mk:oos :cl-hyprland-ipc :load :compile-during-load t)
+(user::setenv  "HYPRLAND_INSTANCE_SIGNATURE"
+	       (user::shell-command-to-string "ss -lx|grep -m 1 hypr| sed -e 's|.*hypr/\\(.*\\)/\\.sock.*|\\1|g'"))
+(user:getenv  "HYPRLAND_INSTANCE_SIGNATURE")
+(hyprland-ipc::init-socket-locations)
+(hyprland-ipc:hyprctl "notify 0 10000 rgb(abcdef) Hi mom!")
+(hyprland-ipc:hyprctl "notify 0 10000 rgb(abcdef) Hi mom!")
+(hyprland-ipc:hyprctl "getoption debug:disable_logs")
+(hyprland-ipc:hyprctl "keyword debug:disable_logs false")
+(hyprland-ipc:hyprctl "keyword debug:disable_logs true")
+#+end_src
