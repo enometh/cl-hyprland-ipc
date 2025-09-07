@@ -35,15 +35,16 @@
             :return (babel:octets-to-string full-buffer))
     #-sbcl-only
     (let ((response-buffer (make-array 8192 :element-type '(unsigned-byte 8)
-				       :fill-pointer t)))
+				       #+lispworks :allocation
+				       #+lispworks :pinnable
+				       :fill-pointer nil)))
       (multiple-value-bind (return-buffer length remote-host remote-port)
 	  (usocket:socket-receive hyprctl-socket response-buffer nil)
 	(format t "hyperctl: socket-recv: same-buffer-p=~A, length=~A remote=~S~%"
 		(eql response-buffer return-buffer) length
 		(list remote-host remote-port))
 	(assert (< length 8192) nil "response too long")
-	(setf (fill-pointer response-buffer) length)
-	(babel:octets-to-string response-buffer)))))
+	(babel:octets-to-string response-buffer :start 0 :end length)))))
 
 
 (defun hyprctl (request &optional jsonp)
