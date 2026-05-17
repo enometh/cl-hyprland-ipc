@@ -16,12 +16,20 @@
 	$sig))))
 (getenv "HYPRLAND_INSTANCE_SIGNATURE")
 
-(defun hyprctl (string)
-  (sly-eval `(hyprland-ipc:hyprctl ,string)))
+(defun hyprctl-frob (cmd string)
+  "batch lines with the CR separator"
+  (cl-assert (or (equal cmd "dispatch") (equal cmd "eval")))
+  (cond ((cl-search "" string)
+	 (let* ((elts (string-split string ""))
+		(lines (mapcar (lambda (x) (concat cmd " " x)) elts)))
+	   (sly-eval `(hyprland-ipc:hyprctl-batch ',lines))))
+	(t
+	 (sly-eval `(hyprland-ipc:hyprctl ,(concat cmd " " string))))))
 
 (when nil
 (sly-eval `(hyprland-ipc:hyprctl "dispatch hl.dsp.exec_cmd(\"xeyes\")"))
-(hyprctl (concat "dispatch " "hl.dsp.exec_cmd(\"xeyes\")")))
+(hyprctl-frob  "dispatch" "hl.dsp.exec_cmd(\"xeyes\")")
+(hyprctl-frob  "dispatch" "hl.dsp.exec_cmd(\"xeyes\")hl.dsp.exec_cmd(\"xeyes\")"))
 
 (defun org-babel-execute-wrapper-hyprctl (wrapper body params)
   (let* ((result-params (cdr (assq :result-params params)))
@@ -42,13 +50,13 @@
 
 (defun org-babel-execute:hyprctl-eval (body params)
   (org-babel-execute-wrapper-hyprctl #'(lambda (body)
-					 (hyprctl (concat "eval " body)))
+					 (hyprctl-frob "eval" body))
 				     body
 				     params))
 
 (defun org-babel-execute:hyprctl-dispatch (body params)
   (org-babel-execute-wrapper-hyprctl #'(lambda (body)
-					 (hyprctl (concat "dispatch " body)))
+					 (hyprctl-frob "dispatch" body))
 				     body
 				     params))
 
@@ -60,6 +68,12 @@
 
 #+begin_src hyprctl-dispatch :results silent
 hl.dsp.exec_cmd("xeyes")
+#+end_src
+
+#+begin_src hyprctl-eval :results silent
+ hl.notification.create({ text = "one", duration = 5000, icon = "ok" })
+
+ hl.notification.create({ text = "two", duration = 5000, icon = "ok" })
 #+end_src
 
 
