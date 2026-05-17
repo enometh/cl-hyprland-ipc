@@ -1,5 +1,68 @@
 -*- Org -*-
 
+* integrate with org babel
+#+begin_src elisp :results silent
+(defun set-hypr-signature (&optional arg)
+  (interactive "P")
+  (let ($regex $str $sig)
+    (setq $str (shell-command-to-string "ss -lx |grep hypr"))
+    (when $str
+      (setq $regex  (file-name-concat (xdg-runtime-dir) "hypr" "\\(\\(?:[0-9a-f]+\\)?_[0-9]+_[0-9]+\\)" ".socket.sock"))
+      (setq $sig (and (string-match $regex $str) (match-string 1 $str)))
+      (when $sig
+	(unless current-prefix-arg
+	  (setenv "HYPRLAND_INSTANCE_SIGNATURE" $sig))
+	(message "HYPRLAND_INSTANCE_SIGNATURE=%s" $sig)
+	$sig))))
+(getenv "HYPRLAND_INSTANCE_SIGNATURE")
+
+(defun hyprctl (string)
+  (sly-eval `(hyprland-ipc:hyprctl ,string)))
+
+(when nil
+(sly-eval `(hyprland-ipc:hyprctl "dispatch hl.dsp.exec_cmd(\"xeyes\")"))
+(hyprctl (concat "dispatch " "hl.dsp.exec_cmd(\"xeyes\")")))
+
+(defun org-babel-execute-wrapper-hyprctl (wrapper body params)
+  (let* ((result-params (cdr (assq :result-params params)))
+   (result (identity (funcall wrapper body))))
+    (org-babel-result-cond result-params
+    (let ((print-level nil)
+              (print-length nil))
+          (if (or (member "scalar" result-params)
+                  (member "verbatim" result-params))
+              (format "%S" result)
+            (format "%s" result)))
+	    (org-babel-reassemble-table
+	     result
+         (org-babel-pick-name (cdr (assq :colname-names params))
+                              (cdr (assq :colnames params)))
+         (org-babel-pick-name (cdr (assq :rowname-names params))
+                              (cdr (assq :rownames params)))))))
+
+(defun org-babel-execute:hyprctl-eval (body params)
+  (org-babel-execute-wrapper-hyprctl #'(lambda (body)
+					 (hyprctl (concat "eval " body)))
+				     body
+				     params))
+
+(defun org-babel-execute:hyprctl-dispatch (body params)
+  (org-babel-execute-wrapper-hyprctl #'(lambda (body)
+					 (hyprctl (concat "dispatch " body)))
+				     body
+				     params))
+
+(defvar org-babel-default-header-args:hyprctl-dispatch '())
+(defvar org-babel-header-args:hyprctl-dispatch '())
+(defvar org-babel-default-header-args:hyprctl-eval '())
+(defvar org-babel-header-args:hyprctl-eval '())
+#+end_src
+
+#+begin_src hyprctl-dispatch :results silent
+hl.dsp.exec_cmd("xeyes")
+#+end_src
+
+
 * 1a7abf2355b
 #+begin_src lisp :eval no
 (defvar *cl-hyprland-ipc-source-dir* "/dev/shm/cl-hyprland-ipc/")
