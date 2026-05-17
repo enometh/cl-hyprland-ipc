@@ -17,6 +17,9 @@
 (hyprland-ipc:hyprctl "notify 0 10000 rgb(abcdef) Hi mom!")
 (hyprland-ipc:hyprctl "notify 0 10000 rgb(abcdef) Hi mom!")
 (hyprland-ipc:hyprctl "getoption debug:disable_logs")
-(hyprland-ipc:hyprctl "keyword debug:disable_logs false")
-(hyprland-ipc:hyprctl "keyword debug:disable_logs true")
+
+;; (hyprland-ipc:hyprctl "keyword debug:disable_logs false")
+;; (hyprland-ipc:hyprctl "keyword debug:disable_logs true")
+(hyprland-ipc:hyprctl "dispatch hl.dsp.exec_cmd(\"xeyes\")")
+(hyprland-ipc:hyprctl "eval hl.config({ debug = { disable_logs = false }})")
 #+end_src
